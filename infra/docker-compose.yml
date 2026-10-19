@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MYSQL_DATABASE: hr
+      MYSQL_USER: jml
+      MYSQL_PASSWORD: ${DB_PASS}
+    ports: ["127.0.0.1:3306:3306"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../hr-source/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASS}
+    ports: ["8080:8080"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes: [keycloak_data:/opt/keycloak/data]
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ports: ["127.0.0.1:9200:9200"]
+    volumes: [es_data:/usr/share/elasticsearch/data]
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports: ["5601:5601"]
+    depends_on: [elasticsearch]
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.0
+    restart: unless-stopped
+    user: root
+    command: filebeat -e --strict.perms=false
+    volumes:
+      - ../monitoring/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ../logs:/logs:ro
+    depends_on: [elasticsearch]
+
+volumes: {mysql_data: {}, keycloak_data: {}, es_data: {}}

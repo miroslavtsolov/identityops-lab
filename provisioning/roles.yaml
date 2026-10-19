@@ -1,0 +1,16 @@
+roles:
+  Employee-Base:    {group: ROLE-Employee-Base,    grants: [Email, Intranet]}
+  Finance-Analyst:  {group: ROLE-Finance-Analyst,  grants: [ERP-CreatePayment, ERP-ViewLedger]}
+  Finance-Approver: {group: ROLE-Finance-Approver, grants: [ERP-ApprovePayment]}
+  IT-Support:       {group: ROLE-IT-Support,       grants: [ServiceNow-Agent, AD-ResetPassword]}
+  HR-Partner:       {group: ROLE-HR-Partner,       grants: [HRIS-ReadWrite]}
+assignments:
+  baseline: [Employee-Base]
+  by_title:
+    "Finance Analyst":     [Finance-Analyst]
+    "Finance Manager":     [Finance-Approver]
+    "IT Support Engineer": [IT-Support]
+    "IT Manager":          [IT-Support]
+    "HR Partner":          [HR-Partner]
+sod_conflicts:
+  - [ERP-CreatePayment, ERP-ApprovePayment]
